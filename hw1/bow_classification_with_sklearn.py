@@ -4,8 +4,7 @@ import re
 import sys
 import os
 import argparse
-from typing import Dict, Tuple
-from numpy.typing import ArrayLike
+from typing import Dict, Tuple, Union
 
 import numpy as np
 from tqdm import tqdm
@@ -15,6 +14,13 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
+
+try:
+    from numpy.typing import ArrayLike
+except ModuleNotFoundError:
+    # There can be many possible types, but we recommend you to use types below.
+    ArrayLike = Union[list, tuple, np.ndarray]
+
 
 """
 # Bag-of-Words Classification with scikit-learn
