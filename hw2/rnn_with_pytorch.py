@@ -52,6 +52,12 @@ Complete four methods(or class):
 """
 
 
+def seed_reset(SEED=0):
+    random.seed(SEED)
+    torch.manual_seed(SEED)
+    torch.backends.cudnn.deterministic = True
+
+
 def _download_dataset(size=10000):
     assert sys.version_info >= (3, 6), "Use Python3.6+"
 
@@ -71,7 +77,7 @@ def _download_dataset(size=10000):
         print("Already exist: {}".format(file_path))
 
 
-def _load_dataset(test_data_path=None, size=10000, train_test_ratio=0.8):
+def _load_dataset(test_data_path=None, size=10000, train_test_ratio=0.8, seed=0):
     _download_dataset()
 
     preprocess_pipeline = Pipeline(lambda x: re.sub(r'[^a-z]+', ' ', x))
@@ -93,7 +99,7 @@ def _load_dataset(test_data_path=None, size=10000, train_test_ratio=0.8):
     
     
     train_data, valid_data = train_data.split(split_ratio=train_test_ratio, 
-                                            random_state = random.seed(SEED))
+                                            random_state = random.seed(seed))
     
     TEXT.build_vocab(train_data)
     LABEL.build_vocab(train_data)
@@ -283,12 +289,12 @@ def set_hyperparameter_dict():
     return param_dict
 
 
-def run(num_samples=10000, param_dict=set_hyperparameter_dict(), train=train, evaluate=evaluate, test_data_path=None):
+def run(num_samples=10000, param_dict=set_hyperparameter_dict(), train=train, evaluate=evaluate, seed=0, test_data_path=None, verbose=True):
     """
     You do not have to consider test_data_path, since it will be used for grading only.
     You can modify this run function for training your own model in the marked area below.  
     """
-    train_data, valid_data, test_data, vocab_size, padding_idx = _load_dataset(test_data_path, num_samples)
+    train_data, valid_data, test_data, vocab_size, padding_idx = _load_dataset(test_data_path, num_samples, seed=seed)
     
     NUM_EMBEDDINGS = vocab_size
     PADDING_IDX = padding_idx
@@ -338,13 +344,14 @@ def run(num_samples=10000, param_dict=set_hyperparameter_dict(), train=train, ev
         train_loss, train_acc = train(model, train_iter, optimizer, criterion)
         valid_loss, valid_acc = evaluate(model, val_iter, criterion)   
                    
-        end_time = time.time()
-        epoch_mins, epoch_secs = epoch_time(start_time, end_time)
-        print(f'\nEpoch Time: {epoch_mins}m {epoch_secs}s')
-        print(f'\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc*100:.2f}%')
-        print(f'\t Val. Loss: {valid_loss:.3f} |  Val. Acc: {valid_acc*100:.2f}%')
+        if verbose:
+            end_time = time.time()
+            epoch_mins, epoch_secs = epoch_time(start_time, end_time)
+            print(f'\nEpoch Time: {epoch_mins}m {epoch_secs}s')
+            print(f'\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc*100:.2f}%')
+            print(f'\t Val. Loss: {valid_loss:.3f} |  Val. Acc: {valid_acc*100:.2f}%')
 
-    ############################################
+    #########################################
     
     if test_data is not None:
         test_loss, test_acc = evaluate(model, test_iter, criterion)
@@ -353,16 +360,6 @@ def run(num_samples=10000, param_dict=set_hyperparameter_dict(), train=train, ev
     return train_loss, train_acc, valid_loss, valid_acc, test_loss, test_acc
 
 
-
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--num-samples", default=10000, type=int)
-    parser.add_argument("--seed", default=1, type=int)
-    args = parser.parse_args()
-
-    SEED = args.seed
-    random.seed(SEED)
-    torch.manual_seed(SEED)
-    torch.backends.cudnn.deterministic = True
-
+    seed_reset()
     run()
